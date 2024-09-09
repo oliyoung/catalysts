@@ -1,0 +1,36 @@
+# This file is used to run the application locally with docker-compose
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    networks:
+      - webnet
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@database:5432/catalysts
+  database:
+    image: postgres:latest
+    healthcheck:
+      test: ["CMD", "pg_isready", "-q", "-d", "postgres", "-U", "postgres"]
+      timeout: 30s
+      interval: 5s
+      retries: 5
+    networks:
+      - webnet
+    restart: always
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: catalysts
+
+networks:
+  webnet:
+    name: webnet
+
+volumes:
+  pgdata:
+  logs:

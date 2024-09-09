@@ -1,0 +1,97 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["views"]
+  binaryTargets   = ["native", "darwin-arm64", "linux-musl-arm64-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum CatalystType {
+  EARNINGS
+  DIVIDEND
+  PRODUCT
+  MERGER
+}
+
+enum Impact {
+  STRONG_POSITIVE
+  POSITIVE
+  NEGATIVE
+  STRONG_NEGATIVE
+  NEUTRAL
+}
+
+enum Industry {
+  ENTERTAINMENT
+}
+
+model User {
+  id    Int    @id @default(autoincrement())
+  email String @unique
+  name  String
+}
+
+model Company {
+  id            Int            @id @default(autoincrement())
+  name          String
+  isin          String
+  industry      Industry
+  parentId      Int?           @unique
+  parent        Company?       @relation("ParentCompany", fields: [parentId], references: [id])
+  children      Company[]      @relation("ParentCompany")
+  catalysts     Catalyst[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @default(now())
+  companyBrands CompanyBrand[]
+}
+
+model Brand {
+  id            Int            @id @default(autoincrement())
+  name          String
+  catalysts     Catalyst[]
+  companyBrands CompanyBrand[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @default(now())
+}
+
+model CompanyBrand {
+  companyId Int
+  company   Company @relation(fields: [companyId], references: [id])
+  brandId   Int
+  brand     Brand   @relation(fields: [brandId], references: [id])
+
+  @@id([companyId, brandId])
+}
+
+model Catalyst {
+  id            Int          @id @default(autoincrement())
+  name          String
+  company       Company      @relation(fields: [companyId], references: [id])
+  companyId     Int
+  anticipatedAt DateTime
+  type          CatalystType @default(PRODUCT)
+  actualImpact  Impact?
+  forecasts     Forecast[]
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @default(now())
+  brandId       Int?
+  brand         Brand?       @relation(fields: [brandId], references: [id])
+}
+
+model Forecast {
+  id         Int      @id @default(autoincrement())
+  catalyst   Catalyst @relation(fields: [catalystId], references: [id])
+  catalystId Int
+  impact     Impact   @default(NEUTRAL)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @default(now())
+}
